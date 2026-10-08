@@ -1,0 +1,23 @@
+name: Relatar problema
+description: Informe um comportamento inesperado da extensão
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: input
+    id: browser
+    attributes:
+      label: Navegador e versão
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versão da extensão
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Descreva o problema e como reproduzir
+    validations:
+      required: true
