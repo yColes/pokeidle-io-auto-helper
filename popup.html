@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PokeIdle.io Auto Helper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand">
+        <div class="ball">◉</div>
+        <div>
+          <h1>Auto Helper</h1>
+          <p>PokeIdle.io</p>
+        </div>
+      </div>
+      <label class="switch master" title="Ativar/desativar tudo">
+        <input id="enabled" type="checkbox"><span></span>
+      </label>
+    </header>
+
+    <section class="status-card">
+      <div><span id="dot" class="dot"></span><strong id="pageStatus">Verificando jogo...</strong></div>
+      <small id="lastAction">Aguardando</small>
+      <small class="perf-note">⚡ Adaptador próprio para “Proximidade para Capturar”</small>
+    </section>
+
+    <button id="quickMaster" class="quick-master" type="button">
+      <span id="quickMasterIcon">Ⅱ</span>
+      <span><b id="quickMasterText">Pausar tudo</b><small>Alt + Shift + P</small></span>
+    </button>
+
+    <section class="grid stats">
+      <div><span id="catches">0</span><small>Tentativas</small></div>
+      <div><span id="capturedTotal">0</span><small>Capturados</small></div>
+      <div><span id="speciesTotal">0</span><small>Espécies</small></div>
+    </section>
+
+    <section class="capture-card">
+      <div class="capture-top">
+        <div><strong>📦 Histórico de capturas</strong><small>Capturas confirmadas reconhecidas no jogo</small></div>
+        <span id="captureTotalLabel" class="capture-count">0</span>
+      </div>
+      <div class="last-capture"><span>Último Pokémon</span><b id="lastPokemon">Nenhum registrado</b></div>
+      <input id="captureSearch" class="search" type="search" placeholder="Buscar Pokémon..." autocomplete="off" aria-label="Filtrar por nome">
+      <div class="capture-tabs" role="group" aria-label="Visualização das capturas">
+        <button class="selected" id="tabRecent" type="button">Recentes</button>
+        <button id="tabSpecies" type="button">Por espécie</button>
+      </div>
+      <div class="capture-list" id="captureList" aria-live="polite"><div class="empty-captures">Aguardando a primeira captura confirmada.</div></div>
+      <div class="capture-foot"><button id="exportCaptures" type="button">Exportar CSV</button><button id="resetCaptures" type="button">Limpar histórico</button></div>
+    </section>
+
+    <section class="ball-card">
+      <div class="ball-card-top">
+        <div><strong>◉ Gerenciador de Pokébolas</strong><small>Estoque, alerta e troca quando o seletor permitir</small></div>
+        <span id="ballManagerState" class="ball-state">—</span>
+      </div>
+      <div class="ball-now"><span>Selecionada</span><b id="currentBall">Não detectada</b><small id="currentBallStock">Estoque: —</small></div>
+      <div id="ballStockList" class="ball-stock-list"><div class="empty-captures">Aguardando os controles de Pokébolas.</div></div>
+    </section>
+
+    <section class="grid stats minor-stats">
+      <div><span id="reconnects">0</span><small>Reconexões</small></div>
+      <div><span id="popups">0</span><small>Pop-ups</small></div>
+    </section>
+
+    <section class="settings">
+      <label class="row"><div><b>Auto Captura</b><small>Clica no primeiro retângulo da lista PROXIMIDADE PARA CAPTURAR</small></div><input id="autoCatch" type="checkbox"></label>
+      <label class="row"><div><b>Trocar Pokébola automaticamente</b><small>Só usa seletores habilitados; não toca nos switches VIP</small></div><input id="autoSwitchBalls" type="checkbox"></label>
+      <label class="row"><div><b>Avisar estoque baixo</b><small>Aviso no jogo + notificação do navegador</small></div><input id="warnLowBalls" type="checkbox"></label>
+      <label class="row"><div><b>Auto Reconectar</b><small>Clica em Reconectar quando o jogo oferecer</small></div><input id="autoReconnect" type="checkbox"></label>
+      <label class="row"><div><b>Fechar pop-ups</b><small>Somente Fechar/X seguros</small></div><input id="closePopups" type="checkbox"></label>
+      <label class="row"><div><b>Reload se cair</b><small>Recarrega se a conexão não voltar</small></div><input id="autoReload" type="checkbox"></label>
+      <label class="row"><div><b>HUD no jogo</b><small>Arraste pelo título para mover</small></div><input id="showHUD" type="checkbox"></label>
+      <label class="row"><div><b>Botão rápido no jogo</b><small>AUTO ON/OFF na própria tela</small></div><input id="showQuickToggle" type="checkbox"></label>
+      <label class="row"><div><b>Evitar descarte da aba</b><small>Ajuda a manter a página carregada em segundo plano</small></div><input id="preventDiscard" type="checkbox"></label>
+    </section>
+
+    <section class="advanced">
+      <label>Cooldown mínimo<div class="number"><input id="cooldownMs" type="number" min="2000" max="15000" step="50"><span>ms</span></div></label>
+      <label>Avisar quando restarem<div class="number"><input id="lowBallThreshold" type="number" min="1" max="9999" step="1"><span>bolas</span></div></label>
+    </section>
+
+    <div class="actions">
+      <button id="openGame" class="primary">Abrir jogo</button>
+      <button id="scanNow">Verificar agora</button>
+      <button id="resetStats" class="ghost">Zerar contadores</button>
+    </div>
+
+    <footer>Esta extensão não habilita nem altera “Lançar até Capturar” ou “Lançar sem Parar” do painel VIP. Ela trabalha com os controles manuais disponíveis na página. O HUD é arrastável; dê duplo clique no título para restaurar a posição.</footer>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
