@@ -1,23 +1,37 @@
-name: Relatar problema
-description: Informe um comportamento inesperado da extensão
-title: '[Bug] '
-labels: ['bug']
+name: Bug report
+description: Informe um problema reproduzível na extensão
+title: "[Bug] "
+labels: ["bug"]
 body:
-  - type: input
-    id: browser
-    attributes:
-      label: Navegador e versão
-    validations:
-      required: true
   - type: input
     id: version
     attributes:
       label: Versão da extensão
+      placeholder: "1.4.0"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Navegador
+      placeholder: "Opera GX / Chrome / Edge + versão"
     validations:
       required: true
   - type: textarea
-    id: details
+    id: problem
     attributes:
-      label: Descreva o problema e como reproduzir
+      label: O que aconteceu?
+      description: Descreva o problema e os passos para reproduzir.
     validations:
       required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que você esperava?
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Informações adicionais
+      description: Screenshots, mensagens do console ou outros detalhes úteis.

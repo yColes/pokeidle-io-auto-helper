@@ -1,0 +1,35 @@
+POKEIDLE.IO AUTO HELPER v1.1.0
+================================
+
+Site alvo:
+  https://pokeidle.io/app
+
+INSTALAÇÃO NO OPERA GX / CHROME / EDGE
+1. Extraia este ZIP para uma pasta fixa.
+2. Abra opera://extensions (Chrome: chrome://extensions).
+3. Ative o Modo do desenvolvedor.
+4. Clique em "Carregar sem compactação".
+5. Selecione a pasta pokeidle-io-auto-helper-v1.1.0.
+6. Abra/recarregue https://pokeidle.io/app.
+
+ATALHO
+  Alt + Shift + P = pausar/ativar tudo.
+
+O QUE FAZ
+- Detecta o painel "PROXIMIDADE PARA CAPTURAR".
+- Clica diretamente no PRIMEIRO RETÂNGULO com o nome do Pokémon (ex.: "Bellsprout Nv1").
+- Delay padrão de 2050 ms (o jogo libera a captura a cada ~2 s).
+- Após cada tentativa, resolve novamente a primeira linha disponível.
+- Não usa o ícone de Pokébola do cabeçalho e não altera automações VIP.
+- Histórico de Pokémon capturados + contagem por espécie + Shiny.
+- Exportação CSV.
+- Lê estoques de Pokébolas quando os elementos da página permitem.
+- Alerta estoque baixo/zerado.
+- Troca de Pokébola somente quando identifica um seletor habilitado de forma segura.
+- Auto reconexão / reload de recuperação.
+- HUD arrastável e botão AUTO ON/OFF.
+- Pede ao Chromium para não descartar a aba da memória.
+
+IMPORTANTE
+O site é dinâmico e pode mudar nomes/classes de elementos. Na primeira execução, abra o painel da extensão.
+A v1.1 foi ajustada para a interface em que o próprio retângulo "Nome NvX" é clicável. Se o jogo mudar essa estrutura, envie o outerHTML de uma dessas linhas.

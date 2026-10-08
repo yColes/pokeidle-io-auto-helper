@@ -1,11 +1,18 @@
-name: Sugerir melhoria
-description: Proponha uma funcionalidade para o helper
-title: '[Sugestão] '
-labels: ['enhancement']
+name: Sugestão de recurso
+description: Sugira uma melhoria para a extensão
+title: "[Feature] "
+labels: ["enhancement"]
 body:
   - type: textarea
     id: idea
     attributes:
-      label: O que você gostaria de melhorar?
+      label: Qual é a ideia?
+      description: Explique o recurso e por que ele seria útil.
     validations:
       required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Como deveria funcionar?
+    validations:
+      required: false
