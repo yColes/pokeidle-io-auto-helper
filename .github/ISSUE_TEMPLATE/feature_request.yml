@@ -1,0 +1,11 @@
+name: Sugerir melhoria
+description: Proponha uma funcionalidade para o helper
+title: '[Sugestão] '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: O que você gostaria de melhorar?
+    validations:
+      required: true
