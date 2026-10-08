@@ -6,9 +6,6 @@
 ![Manifest](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)
 ![Navegadores](https://img.shields.io/badge/Opera%20GX%20%7C%20Chrome%20%7C%20Edge-compatível-8A2BE2)
 
-<p align="center">
-  <img src="docs/screenshots/game.png" alt="PokeIdle.io Auto Helper" width="900">
-</p>
 
 ## ✨ O que a extensão faz
 
