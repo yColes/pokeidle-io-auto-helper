@@ -176,15 +176,18 @@
     catch (_) { return null; }
 
     let checked = 0;
+    let headingFallback = null;
     for (const el of nodes) {
       if (++checked > 2600) break;
       if (ownUi(el)) continue;
       const raw = fastText(el);
       if (!raw || raw.length > 110) continue;
       const n = norm(raw);
-      if (n === target || n.startsWith(target) || n.includes(target)) return el;
+      if (n === target) return el;
+      if (!headingFallback && n.includes(target) && n.length <= target.length + 24 &&
+          !/(?:nv\.?|n[ií]vel|nivel|lv\.?)\s*\d{1,3}/i.test(n)) headingFallback = el;
     }
-    return null;
+    return headingFallback;
   }
 
   function panelFromHeading(heading, needle, options = {}) {
@@ -256,11 +259,16 @@
   // (ex.: "Bellsprout Nv1"). Mantemos uma referência direta a esse retângulo.
   function parseProximityRowText(raw) {
     const text = String(raw || '').replace(/\s+/g, ' ').trim();
-    if (!text || text.length > 90) return null;
-    const m = text.match(/^([\p{L}\p{N} .♀♂'’\-]{2,65}?)\s+(?:nv\.?|n[ií]vel|nivel|lv\.?)\s*(\d{1,3})$/iu);
+    if (!text || text.length > 62) return null;
+    // Corrige falso positivo: o painel inteiro não é uma linha de Pokémon.
+    if (/proximidade|capturar|automac(?:ao|oes)|painel|pokebolas?|estoque/i.test(norm(text))) return null;
+    const levelMarkers = text.match(/(?:^|\s)(?:nv\.?|n[ií]vel|nivel|lv\.?)\s*\d{1,3}(?=\s|$)/giu) || [];
+    if (levelMarkers.length !== 1) return null;
+    const m = text.match(/^([\p{L}][\p{L}\p{N} .♀♂'’\-]{1,41}?)\s+(?:nv\.?|n[ií]vel|nivel|lv\.?)\s*(\d{1,3})$/iu);
     if (!m) return null;
     const name = globalThis.PokeIdleCaptureParser?.sanitizeName(m[1]) || String(m[1]).trim();
-    if (!name || name.length > 70) return null;
+    if (!name || name.length > 40 || name.split(/\s+/).length > 5) return null;
+    if (/(?:^|\s)(?:nv\.?|n[ií]vel|nivel|lv\.?)\s*\d/i.test(name)) return null;
     return { name, level:Number(m[2]) || 0, label:text };
   }
 
@@ -275,16 +283,17 @@
       if (!parsed) continue;
 
       const rect = cur.getBoundingClientRect?.();
-      if (!rect || rect.width < 70 || rect.height < 18 || rect.height > 110) continue;
+      if (!rect || rect.width < 70 || rect.width > 340 || rect.height < 18 || rect.height > 90) continue;
+      if (!isEnabled(cur)) continue;
 
       let score = 0;
-      // Pela UI mostrada, o retângulo inteiro costuma ter ~150-230 px de largura.
-      if (rect.width >= 110 && rect.width <= 320) score += 80;
-      if (rect.height >= 26 && rect.height <= 70) score += 60;
+      if (rect.width >= 130 && rect.width <= 270) score += 80;
+      if (rect.height >= 25 && rect.height <= 55) score += 90;
       if (cur.matches?.('button,a,[role="button"],[tabindex]')) score += 50;
       if (cur.onclick || cur.getAttribute?.('onclick')) score += 35;
-      if (depth >= 1) score += 10; // prefere o contêiner da linha, não só o texto interno
-      if ((cur.childElementCount || 0) >= 1) score += 10;
+      if (depth >= 1) score += 15;
+      if ((cur.childElementCount || 0) >= 1) score += 12;
+      if (cur === textNode) score -= 12;
 
       if (score > bestScore) {
         bestScore = score;
@@ -292,7 +301,7 @@
       }
     }
 
-    return best || textNode;
+    return best;
   }
 
   function findProximityRows(allowDiscovery = false) {
@@ -533,9 +542,11 @@
     for (const item of stocks) item.current = !!current && item.key === current.key;
 
     const known = stocks.filter(x => Number.isFinite(x.count));
-    const out = known.length > 0 && known.every(x => x.count === 0);
-    const total = known.reduce((sum, x) => sum + x.count, 0);
-    return { detected:stocks.length > 0, current, stocks, out, total, at:Date.now(), source:found.size ? 'named' : 'slots' };
+    const namedInventory = found.size > 0;
+    const trustworthy = (namedInventory && known.length > 0) || known.some(x => x.count > 0);
+    const out = namedInventory && known.length > 0 && known.every(x => x.count === 0);
+    const total = trustworthy ? known.reduce((sum, x) => sum + x.count, 0) : null;
+    return { detected:trustworthy && stocks.length > 0, current:trustworthy ? current : null, stocks:trustworthy ? stocks : [], out, total, at:Date.now(), source:found.size ? 'named' : 'slots' };
   }
 
   function showToast(message, level = 'info') {
@@ -966,7 +977,7 @@
     ].join(';');
 
     hudTitle = document.createElement('div');
-    hudTitle.textContent = '↕ ◉ POKEIDLE.IO HELPER v1.1';
+    hudTitle.textContent = '↕ ◉ POKEIDLE.IO HELPER v1.2';
     hudTitle.style.cssText = 'font-weight:700;color:#ffd5ff;margin:-3px -5px 5px;padding:3px 5px;border-radius:5px;cursor:move;pointer-events:auto;background:rgba(255,255,255,.05)';
     hud.append(hudTitle);
     setupHudDrag(hudTitle);
