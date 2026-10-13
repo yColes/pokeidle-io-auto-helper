@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "PokeIdle.io - Auto Helper",
-  "version": "1.2.0",
-  "description": "Auto captura pelo retângulo de PROXIMIDADE PARA CAPTURAR no PokeIdle.io, delay de 2s, histórico, alertas de Pokébolas, HUD arrastável e atalho rápido.",
+  "version": "1.3.0",
+  "description": "Auto captura no painel PROXIMIDADE PARA CAPTURAR com detector de linhas v1.3, diagnóstico, histórico e HUD móvel.",
   "permissions": [
     "storage",
     "tabs",
@@ -46,6 +46,7 @@
       ],
       "js": [
         "capture-parser.js",
+        "proximity-targeting.js",
         "content.js"
       ],
       "run_at": "document_idle"
