@@ -222,15 +222,7 @@
   function discoverProximityRoot() {
     invalidateCaches();
     if (cache.proximityRoot) return cache.proximityRoot;
-    const heading = findSmallHeading('proximidade para capturar');
-    const root = panelFromHeading(heading, 'proximidade para capturar', { maxText:1400, maxChildren:70 });
-    if (root) {
-      cache.proximityRoot = root;
-      cache.discoveryCount++;
-      cache.captureRow = null;
-      setAction('Painel de proximidade localizado');
-    }
-    return root;
+    return locateCapturePanel(true);
   }
 
   function discoverAutomationRoot() {
@@ -254,147 +246,82 @@
     return false;
   }
 
-  // Neste PokeIdle a captura NÃO é feita pelo ícone de Pokébola do cabeçalho.
-  // O alvo correto é o retângulo da lista "PROXIMIDADE PARA CAPTURAR"
-  // (ex.: "Bellsprout Nv1"). Mantemos uma referência direta a esse retângulo.
-  function parseProximityRowText(raw) {
-    const text = String(raw || '').replace(/\s+/g, ' ').trim();
-    if (!text || text.length > 62) return null;
-    // Corrige falso positivo: o painel inteiro não é uma linha de Pokémon.
-    if (/proximidade|capturar|automac(?:ao|oes)|painel|pokebolas?|estoque/i.test(norm(text))) return null;
-    const levelMarkers = text.match(/(?:^|\s)(?:nv\.?|n[ií]vel|nivel|lv\.?)\s*\d{1,3}(?=\s|$)/giu) || [];
-    if (levelMarkers.length !== 1) return null;
-    const m = text.match(/^([\p{L}][\p{L}\p{N} .♀♂'’\-]{1,41}?)\s+(?:nv\.?|n[ií]vel|nivel|lv\.?)\s*(\d{1,3})$/iu);
-    if (!m) return null;
-    const name = globalThis.PokeIdleCaptureParser?.sanitizeName(m[1]) || String(m[1]).trim();
-    if (!name || name.length > 40 || name.split(/\s+/).length > 5) return null;
-    if (/(?:^|\s)(?:nv\.?|n[ií]vel|nivel|lv\.?)\s*\d/i.test(name)) return null;
-    return { name, level:Number(m[2]) || 0, label:text };
+  // Detector refeito na v1.3, ancorado na lista real de proximidade.
+  const captureTargeting = globalThis.PIOCaptureTargeting;
+  let lastLocateAt=0;
+  let captureStatus='Inicializando busca';
+  let lastValidRows=0;
+  let lastTargetLabel='';
+  let lastClickResult='—';
+
+  function locateCapturePanel(force=false) {
+    const now=Date.now();
+    if (!force && cache.proximityRoot?.isConnected && now-lastLocateAt<2500) return cache.proximityRoot;
+    lastLocateAt=now;
+    const result=captureTargeting?.locate(document) || {root:null,rows:[],reason:'Módulo de captura indisponível'};
+    cache.proximityRoot=result.root;
+    cache.captureRow=result.rows[0]?.row || null;
+    lastValidRows=result.rows.length;
+    captureStatus=result.reason;
+    lastTargetLabel=result.rows[0]?.label || '';
+    return result.root;
   }
 
-  function resolveProximityClickRow(textNode, root) {
-    if (!textNode || !root?.contains(textNode)) return null;
-    let best = null;
-    let bestScore = -999;
-
-    for (let cur = textNode, depth = 0; cur && cur !== root && depth < 6; depth++, cur = cur.parentElement) {
-      if (ownUi(cur) || !isVisibleFast(cur)) continue;
-      const parsed = parseProximityRowText(fastText(cur));
-      if (!parsed) continue;
-
-      const rect = cur.getBoundingClientRect?.();
-      if (!rect || rect.width < 70 || rect.width > 340 || rect.height < 18 || rect.height > 90) continue;
-      if (!isEnabled(cur)) continue;
-
-      let score = 0;
-      if (rect.width >= 130 && rect.width <= 270) score += 80;
-      if (rect.height >= 25 && rect.height <= 55) score += 90;
-      if (cur.matches?.('button,a,[role="button"],[tabindex]')) score += 50;
-      if (cur.onclick || cur.getAttribute?.('onclick')) score += 35;
-      if (depth >= 1) score += 15;
-      if ((cur.childElementCount || 0) >= 1) score += 12;
-      if (cur === textNode) score -= 12;
-
-      if (score > bestScore) {
-        bestScore = score;
-        best = cur;
-      }
+  function findProximityRows(force=false) {
+    let root=cache.proximityRoot;
+    if (!root?.isConnected || force) {
+      if (force || Date.now()-lastLocateAt>2500) root=locateCapturePanel(true);
+      else return [];
     }
-
-    return best;
-  }
-
-  function findProximityRows(allowDiscovery = false) {
-    const root = cache.proximityRoot?.isConnected ? cache.proximityRoot : (allowDiscovery ? discoverProximityRoot() : null);
     if (!root) return [];
-
-    const found = [];
-    const seen = new Set();
-    let nodes = [];
-    try {
-      // O painel é pequeno; esta busca fica restrita SOMENTE a ele.
-      nodes = root.querySelectorAll('div,li,button,a,[role="button"],[tabindex],span,p,strong,b');
-    } catch (_) {
-      return found;
-    }
-
-    for (const node of nodes) {
-      if (ownUi(node) || !isVisibleFast(node)) continue;
-      const parsed = parseProximityRowText(fastText(node));
-      if (!parsed) continue;
-      const row = resolveProximityClickRow(node, root);
-      if (!row || seen.has(row) || !root.contains(row) || !isVisibleFast(row)) continue;
-      const rect = row.getBoundingClientRect?.();
-      if (!rect || rect.width < 70 || rect.height < 18) continue;
-      seen.add(row);
-      found.push({ row, ...parsed, top:rect.top, left:rect.left });
-    }
-
-    found.sort((a,b) => a.top - b.top || a.left - b.left);
-    return found;
+    const rows=captureTargeting?.collectRows(root) || [];
+    lastValidRows=rows.length;
+    lastTargetLabel=rows[0]?.label || '';
+    captureStatus=rows.length ? rows.length+' linha(s) encontrada(s)' : 'Painel encontrado, nenhuma linha válida';
+    cache.captureRow=rows[0]?.row || null;
+    return rows;
   }
 
-  function findManualCaptureButton(allowDiscovery = false) {
-    const root = cache.proximityRoot?.isConnected ? cache.proximityRoot : (allowDiscovery ? discoverProximityRoot() : null);
-    if (!root) return null;
-
-    if (cache.captureRow?.isConnected && root.contains(cache.captureRow) && isVisibleFast(cache.captureRow)) {
-      const parsed = parseProximityRowText(fastText(cache.captureRow));
-      if (parsed) return cache.captureRow;
-    }
-
-    const rows = findProximityRows(allowDiscovery);
-    cache.captureRow = rows[0]?.row || null;
-    return cache.captureRow;
+  function findManualCaptureButton(force=false) {
+    return findProximityRows(force)[0]?.row || null;
   }
 
-  function extractTargetName(allowDiscovery = false) {
-    const row = findManualCaptureButton(allowDiscovery);
-    if (!row) return '';
-    return parseProximityRowText(fastText(row))?.name || '';
+  function extractTargetName() {
+    return lastTargetLabel.replace(/\s+(?:nv\.?|n[ií]vel|nivel|lv\.?)\s*\d+$/i,'') || '';
   }
 
   function captureReady() {
-    const root = cache.proximityRoot?.isConnected ? cache.proximityRoot : discoverProximityRoot();
-    if (!root?.isConnected || !isVisibleFast(root)) return false;
-    const row = findManualCaptureButton(true);
-    return !!(row && isVisibleFast(row) && parseProximityRowText(fastText(row)));
+    return lastValidRows>0 && !!cache.captureRow?.isConnected;
   }
 
   function autoCatchTick() {
     if (!config.enabled || !config.autoCatch || state.catchBusy) return;
-    const now = Date.now();
-    // O jogo usa ~2s entre cliques. 2050ms dá uma margem pequena para não perder
-    // tentativas por clicar alguns milissegundos antes do servidor liberar.
-    const cooldown = Math.max(2000, Number(config.cooldownMs) || 2050);
-    if (now - state.lastCatch < cooldown) return;
-
-    const row = findManualCaptureButton(false);
-    if (!row || !isVisibleFast(row)) return;
-    const parsed = parseProximityRowText(fastText(row));
-    if (!parsed?.name) {
-      cache.captureRow = null;
+    const now=Date.now();
+    const cooldown=Math.max(2000,Number(config.cooldownMs) || 2050);
+    if (now-state.lastCatch<cooldown) return;
+    const rows=findProximityRows(false);
+    if (!rows.length) {
+      if (now-lastLocateAt>2500) locateCapturePanel(true);
       return;
     }
-
-    state.catchBusy = true;
-    state.lastCatch = now;
+    const item=rows[0];
+    const result=captureTargeting.clickCandidate(item,document);
+    lastClickResult=result.reason;
+    if (!result.ok) {
+      setAction('Captura: '+result.reason);
+      return;
+    }
+    state.catchBusy=true;
+    state.lastCatch=now;
     state.sessionThrows++;
-    state.pendingTargetName = parsed.name;
-    state.pendingTargetAt = now;
-    setAction(`Clicando em ${parsed.name} Nv${parsed.level || '?'}`);
-    dispatchClick(row);
+    state.pendingTargetName=item.name;
+    state.pendingTargetAt=now;
+    setAction('Clique enviado em '+item.name+' Nv'+item.level);
     bumpStats('throws');
-
-    // A linha pode ser removida/reordenada depois do clique; força a próxima
-    // tentativa a resolver o primeiro retângulo disponível de novo.
     setTimeout(() => {
-      state.catchBusy = false;
-      if (!cache.captureRow?.isConnected || !parseProximityRowText(fastText(cache.captureRow))) {
-        cache.captureRow = null;
-      }
+      state.catchBusy=false;
       autoCatchTick();
-    }, cooldown);
+    },cooldown);
   }
 
   // ---------------------------------------------------------------------------
@@ -977,7 +904,7 @@
     ].join(';');
 
     hudTitle = document.createElement('div');
-    hudTitle.textContent = '↕ ◉ POKEIDLE.IO HELPER v1.2';
+    hudTitle.textContent = '↕ ◉ POKEIDLE.IO HELPER v1.3';
     hudTitle.style.cssText = 'font-weight:700;color:#ffd5ff;margin:-3px -5px 5px;padding:3px 5px;border-radius:5px;cursor:move;pointer-events:auto;background:rgba(255,255,255,.05)';
     hud.append(hudTitle);
     setupHudDrag(hudTitle);
@@ -990,6 +917,8 @@
     addHudLine('Estoque: ', 'ballStock');
     addHudLine('Reconexões: ', 'reconnects');
     addHudLine('Painel captura: ', 'cache');
+    addHudLine('Linhas válidas: ', 'rows');
+    addHudLine('Clique: ', 'clickResult');
     addHudLine('Rodando: ', 'uptime');
     addHudLine('Último: ', 'lastAction');
     document.body.appendChild(hud);
@@ -1043,7 +972,9 @@
       if (force || hudRefs.ballStock.style.color !== color) hudRefs.ballStock.style.color = color;
     }
     setHudText('reconnects', state.sessionReconnects);
-    setHudText('cache', cache.proximityRoot?.isConnected ? (cache.captureRow?.isConnected ? 'OK' : 'painel OK') : 'procurando');
+    setHudText('cache', captureStatus);
+    setHudText('rows', lastValidRows);
+    setHudText('clickResult', lastClickResult);
     setHudText('lastAction', state.lastAction);
   }
 
@@ -1059,9 +990,8 @@
   function discoveryTick() {
     invalidateCaches();
     if (!config.enabled) return;
-    discoverProximityRoot();
+    if (!cache.proximityRoot?.isConnected || (!lastValidRows && Date.now() - lastLocateAt > 2500)) locateCapturePanel(true);
     discoverAutomationRoot();
-    findManualCaptureButton(true);
     updateHUDState();
   }
 
@@ -1119,7 +1049,8 @@
         catchReady:captureReady(),
         target:extractTargetName(),
         disconnected:!!state.disconnectedAt,
-        performanceMode:'cached-pokeidle-panels',
+        performanceMode:'proximity-targeting-v1.3',
+        captureDiagnostics:{ status:captureStatus, validRows:lastValidRows, lastClick:lastClickResult, target:lastTargetLabel },
         captureCache:!!cache.proximityRoot?.isConnected,
         manualCaptureButton:!!cache.captureRow?.isConnected,
         ballManager:publicBallSnapshot(),
@@ -1136,10 +1067,20 @@
       return;
     }
 
+    if (message?.type === 'GET_CAPTURE_DIAGNOSTICS') {
+      const root=locateCapturePanel(true);
+      const rows=findProximityRows();
+      const markup=root?.outerHTML?.slice(0,7000).replace(/(value|token|password|authorization|session|secret)\s*=\s*["'][^"']*["']/gi,'$1="[oculto]"') || '';
+      sendResponse({ok:true,version:'1.3.0',url:location.origin+location.pathname,panel:captureStatus,
+        rows:rows.slice(0,12).map(x=>({label:x.label,tag:x.row.tagName,cls:String(x.row.className).slice(0,110),rect:{w:Math.round(x.rect.width),h:Math.round(x.rect.height)},cursor:getComputedStyle(x.row).cursor})),
+        lastClick:lastClickResult,html:markup});
+      return;
+    }
     if (message?.type === 'SCAN_NOW') {
       cache.proximityRoot = null;
       cache.captureRow = null;
       cache.automationRoot = null;
+      lastLocateAt=0;
       discoveryTick();
       autoCatchTick();
       ballManagerTick();
