@@ -202,7 +202,7 @@ async function refresh() {
     if (res?.disconnected) setPageStatus('warn', 'Jogo desconectado', res.session?.lastAction || 'Tentando recuperar');
     else if (!res?.enabled) setPageStatus('warn', 'Auto Helper pausado', res.session?.lastAction || 'Pausado');
     else if (res?.catchReady) setPageStatus('ok', `Pronto para capturar${res.target ? ` · ${res.target}` : ''}`, res.session?.lastAction || 'Aguardando');
-    else if (res?.captureCache && !res?.manualCaptureButton) setPageStatus('warn', 'Painel achado · linha não identificada', 'Clique em “Verificar agora”; se persistir, me envie o HTML de uma linha Nome NvX');
+    else if (res?.captureCache && !res?.manualCaptureButton) setPageStatus('warn', 'Painel achado · linha não identificada', 'Use o botão Copiar diagnóstico da captura e cole o resultado');
     else setPageStatus('ok', 'Auto Helper ativo', res.session?.lastAction || stats.lastAction || 'Aguardando Pokémon próximo');
   } catch (_) {
     setPageStatus('warn', 'Recarregue a aba do jogo', 'A página ainda não recebeu o helper');
@@ -249,6 +249,19 @@ $('scanNow').addEventListener('click', async () => {
     try { await chrome.tabs.sendMessage(tab.id, { type:'SCAN_NOW' }); } catch (_) {}
   }
   await refresh();
+});
+
+$('copyCaptureDiagnostic').addEventListener('click', async () => {
+  const tab=await getGameTab();
+  if (!tab?.id) return setPageStatus('warn','Abra o jogo primeiro','Não encontrei uma aba do PokeIdle.io');
+  try {
+    const diag=await chrome.tabs.sendMessage(tab.id,{type:'GET_CAPTURE_DIAGNOSTICS'});
+    if (!diag?.ok) throw new Error('sem resposta da página');
+    await navigator.clipboard.writeText(JSON.stringify(diag,null,2));
+    setPageStatus('ok','Diagnóstico copiado','Cole aqui no chat caso a captura ainda falhe');
+  } catch(e) {
+    setPageStatus('warn','Falha ao copiar diagnóstico',String(e.message||e));
+  }
 });
 
 $('tabRecent').addEventListener('click', () => { captureTab = 'recent'; renderCaptures(); });
