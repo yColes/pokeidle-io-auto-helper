@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+- Detector de proximidade refeito para identificar as linhas de Pokémon, não o cabeçalho.
+- Clique enviado ao elemento dentro do primeiro card visível e não ao painel.
+- Diagnóstico de captura copiável pelo popup.
+- HUD informa número de linhas e estado do clique.
+- Cooldown de 2,05 segundos e cache de baixo consumo mantidos.
+
 ## 1.2.0 — Correção da lista de captura
 
 - Reconhece somente uma linha de Pokémon, como `Abra Nv10`.
