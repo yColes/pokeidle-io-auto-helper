@@ -2,7 +2,7 @@
 
 > Extensão para navegadores Chromium que automatiza a captura pela lista **PROXIMIDADE PARA CAPTURAR** do PokeIdle.io, mantendo histórico, HUD e controles rápidos sem depender de automações VIP do jogo.
 
-![Versão](https://img.shields.io/badge/versão-1.2.0-2ea44f)
+![Versão](https://img.shields.io/badge/versão-1.3.0-2ea44f)
 ![Manifest](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)
 ![Navegadores](https://img.shields.io/badge/Opera%20GX%20%7C%20Chrome%20%7C%20Edge-compatível-8A2BE2)
 
@@ -29,7 +29,7 @@ Principais recursos:
 
 ## 🚀 Instalação
 
-1. Baixe a versão mais recente em **Releases** ou use `dist/pokeidle-io-auto-helper-v1.2.0.zip`.
+1. Baixe a versão mais recente em **Releases** ou use `dist/pokeidle-io-auto-helper-v1.3.0.zip`.
 2. Extraia o arquivo em uma pasta permanente.
 3. Abra:
    - Opera GX: `opera://extensions`
